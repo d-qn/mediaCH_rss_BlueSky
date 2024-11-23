@@ -1,26 +1,27 @@
 {
-    "id": "9EDAA0B7",
-    "path": "~/dev/r-letemps-bluesky/bot.r",
-    "project_path": null,
+    "id": "A789FAFA",
+    "path": "~/dev/mediaCH_rss_BlueSky/bot.R",
+    "project_path": "bot.R",
     "type": "r_source",
-    "hash": "0",
+    "hash": "3010445150",
     "contents": "",
     "dirty": false,
-    "created": 1732314598192.0,
+    "created": 1732297361253.0,
     "source_on_save": false,
     "relative_order": 2,
     "properties": {
+        "tempName": "Untitled2",
         "source_window_id": "",
         "Source": "Sourcetgcdz1kj0igo",
-        "cursorPosition": "7,10",
-        "scrollLine": "0"
+        "cursorPosition": "119,0",
+        "scrollLine": "91"
     },
     "folds": "",
-    "lastKnownWriteTime": 1732308201,
+    "lastKnownWriteTime": 1732380007,
     "encoding": "UTF-8",
     "collab_server": "",
     "source_window": "",
-    "last_content_update": 1732308201,
+    "last_content_update": 1732380007772,
     "read_only": false,
     "read_only_alternatives": []
 }
