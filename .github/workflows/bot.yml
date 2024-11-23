@@ -1,7 +1,7 @@
 name: "Update Médias CH BlueSky"
 on:
   schedule:
-    - cron: '0 * * * *' # run the bot once an hour (at every minute 0 on the clock)
+    - cron: '0,30 * * * *' # run the bot once an hour (at every minute 0 on the clock)
   push: # also run the action when something on a new commit
     branches:
       - main
