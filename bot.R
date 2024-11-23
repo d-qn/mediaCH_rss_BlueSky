@@ -134,6 +134,7 @@ posts <- feeds_dfu |>
          desc_preview = ifelse(desc_preview_len < 3, "", desc_preview),
          post_text = glue("{title}\n\n\"{desc_preview}\"\n\n{link}"))
 
+cat("\n", nrow(posts), "uniques new posts (", nrow(feeds_df) - nrow(posts), " similar or duplicated posts removed)\n")
 
 ## Part 4: get already posted updates and de-duplicate
 Sys.setenv(BSKY_TOKEN = "r-bs-mediaCH.rds")
