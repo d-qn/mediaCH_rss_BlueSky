@@ -142,6 +142,10 @@ auth(user = "mediasch.bsky.social",
      password = Sys.getenv("MEDIACH_PW"),
      overwrite = TRUE)
 old_posts <- get_skeets_authored_by("mediasch.bsky.social", limit = 5000L)
+
+cat("\n", sum(posts$post_text %in% old_posts$text),
+    " posts already skeeted (out of ", nrow(posts), " posts)\n")
+
 posts_new <- posts |>
   filter(!post_text %in% old_posts$text) %>%
   filter(nchar(post_text) <= 300)
