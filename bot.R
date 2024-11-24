@@ -60,7 +60,7 @@ feedsl <- 1:length(rss_feeds) |>
     descr <- xml_find_all(feed, "//item/description") |>
       xml_text()
 
-    if(str_detect(rss_feeds[i], "(partner\\-feeds|protestinfo|publiceye)")) {
+    if(str_detect(rss_feeds[i], "(partner\\-feeds|protestinfo|publiceye|blick)")) {
       descr_txt <- descr |> str_replace_all("<[^>]+>", "")
     } else {
       # strip html from description
