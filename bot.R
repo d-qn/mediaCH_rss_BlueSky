@@ -29,7 +29,7 @@ rss_feeds  <- c (
   "https://partner-feeds.publishing.tamedia.ch/rss/bilan/economie",
 
 
-  "https://partner-feeds.20min.ch/rss/20minutes/suisse-romande",
+ # "https://partner-feeds.20min.ch/rss/20minutes/suisse-romande",
   "https://partner-feeds.20min.ch/rss/20minutes/suisse",
 
 
