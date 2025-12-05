@@ -9,43 +9,32 @@ library(xml2)
 library(text2vec)
 
 
-rss_feeds  <- c (
+rss_feeds <- c(
   "https://www.letemps.ch/suisse.rss",
   "https://www.letemps.ch/tags/votations.rss",
   "https://www.letemps.ch/economie.rss",
-
   "https://www.heidi.news/articles.rss",
-
   "https://www.rts.ch/info/suisse/?format=rss/news",
   "https://www.rts.ch/info/regions/?format=rss/news",
-
   "https://www.publiceye.ch/fr/rssPublications.xml",
-
   "https://partner-feeds.publishing.tamedia.ch/rss/24heures/suisse",
   "https://partner-feeds.publishing.tamedia.ch/rss/24heures/vaud-regions",
-
   "https://partner-feeds.publishing.tamedia.ch/rss/tdg/geneve",
-
   "https://partner-feeds.publishing.tamedia.ch/rss/bilan/economie",
 
 
- # "https://partner-feeds.20min.ch/rss/20minutes/suisse-romande",
+  # "https://partner-feeds.20min.ch/rss/20minutes/suisse-romande",
   "https://partner-feeds.20min.ch/rss/20minutes/suisse",
-
-
   "https://www.blick.ch/fr/suisse/rss.xml",
-
   "https://www.watson.ch/fr/api/2.0/rss/index.xml?tag=Suisse",
-
-  "https://lecourrier.ch/rubrique/suisse/rss"#,
+  "https://lecourrier.ch/rubrique/suisse/rss" # ,
   # "https://lecourrier.ch/theme/geneve/rss",
   # "https://lecourrier.ch/theme/neuchatel/rss",
   # "https://lecourrier.ch/theme/valais/rss",
   # "https://lecourrier.ch/theme/vaud/rss",
   # "https://lecourrier.ch/theme/jura/rss",
 
- # "https://www.protestinfo.ch/flux/protestinfo/rss.xml"
-
+  # "https://www.protestinfo.ch/flux/protestinfo/rss.xml"
 )
 
 ### Part 1: Get the feeds ###
@@ -60,7 +49,7 @@ feedsl <- 1:length(rss_feeds) |>
     descr <- xml_find_all(feed, "//item/description") |>
       xml_text()
 
-    if(str_detect(rss_feeds[i], "(partner\\-feeds|protestinfo|publiceye|blick)")) {
+    if (str_detect(rss_feeds[i], "(partner\\-feeds|protestinfo|publiceye|blick)")) {
       descr_txt <- descr |> str_replace_all("<[^>]+>", "")
     } else {
       # strip html from description
@@ -88,9 +77,7 @@ feedsl <- 1:length(rss_feeds) |>
       timestamp = xml_find_all(feed, "//item/pubDate") |>
         xml_text() |>
         utctime(tz = "UTC"),
-
       description = descr_txt
-
     )
     rss_posts %>%
       mutate(
@@ -123,28 +110,62 @@ unique_indices <- setdiff(1:nrow(feeds_df), unique(similar_pairs[, 2]))
 feeds_dfu <- feeds_df[unique_indices, ]
 
 # Résultat sans doublons sémantiques
-#feeds_dfu
+# feeds_dfu
 
 ### Part 3: create posts from unique feed ##
 posts <- feeds_dfu |>
   arrange(timestamp) |>
-  mutate(desc_preview_len = 294 - nchar(title) - nchar(link),
-         desc_preview_len_tmp = ifelse(desc_preview_len < 3, 3, desc_preview_len),
-         desc_preview = map2_chr(description, desc_preview_len_tmp, function(x, y) str_trunc(x, y)),
-         desc_preview = ifelse(desc_preview_len < 3, "", desc_preview),
-         post_text = glue("{title}\n\n\"{desc_preview}\"\n\n{link}"))
+  mutate(
+    desc_preview_len = 294 - nchar(title) - nchar(link),
+    desc_preview_len_tmp = ifelse(desc_preview_len < 3, 3, desc_preview_len),
+    desc_preview = map2_chr(description, desc_preview_len_tmp, function(x, y) str_trunc(x, y)),
+    desc_preview = ifelse(desc_preview_len < 3, "", desc_preview),
+    post_text = glue("{title}\n\n\"{desc_preview}\"\n\n{link}")
+  )
 
 cat("\n", nrow(posts), "uniques new posts (", nrow(feeds_df) - nrow(posts), " similar or duplicated posts removed)\n")
 
 ## Part 4: get already posted updates and de-duplicate
 Sys.setenv(BSKY_TOKEN = "r-bs-mediaCH.rds")
-auth(user = "mediasch.bsky.social",
-     password = Sys.getenv("MEDIACH_PW"),
-     overwrite = TRUE)
-old_posts <- get_skeets_authored_by("mediasch.bsky.social", limit = 5000L)
+auth(
+  user = "mediasch.bsky.social",
+  password = Sys.getenv("MEDIACH_PW"),
+  overwrite = TRUE
+)
+# Retry logic for fetching old posts to handle transient 502 errors
+max_retries <- 5
+wait_time <- 5
+old_posts <- NULL
 
-cat("\n", sum(posts$post_text %in% old_posts$text),
-    " posts already skeeted (out of ", nrow(posts), " posts)\n")
+for (i in seq_len(max_retries)) {
+  cat("Fetching skeets (attempt", i, "of", max_retries, ")...\n")
+
+  # Use try() to catch errors without stopping execution
+  res <- try(get_skeets_authored_by("mediasch.bsky.social", limit = 5000L), silent = TRUE)
+
+  if (!inherits(res, "try-error")) {
+    old_posts <- res
+    break
+  } else {
+    # If it failed, print the error
+    cat("Error:", as.character(res))
+  }
+
+  if (i < max_retries) {
+    cat("Retrying in", wait_time, "seconds...\n")
+    Sys.sleep(wait_time)
+    wait_time <- wait_time * 2 # Exponential backoff
+  }
+}
+
+if (is.null(old_posts)) {
+  stop("Failed to fetch skeets after ", max_retries, " attempts.")
+}
+
+cat(
+  "\n", sum(posts$post_text %in% old_posts$text),
+  " posts already skeeted (out of ", nrow(posts), " posts)\n"
+)
 
 posts_new <- posts |>
   filter(!post_text %in% old_posts$text) %>%
@@ -154,9 +175,15 @@ posts_new <- posts |>
 ## Part 5: Post skeets!
 for (i in seq_len(nrow(posts_new))) {
   # if people upload broken preview images, this fails
-  resp <- try(post_skeet(text = posts_new$post_text[i],
-                         created_at = posts_new$timestamp[i]))
-  if (methods::is(resp, "try-error")) post_skeet(text = posts_new$post_text[i],
-                                                 created_at = posts_new$timestamp[i],
-                                                 preview_card = FALSE)
+  resp <- try(post_skeet(
+    text = posts_new$post_text[i],
+    created_at = posts_new$timestamp[i]
+  ))
+  if (methods::is(resp, "try-error")) {
+    post_skeet(
+      text = posts_new$post_text[i],
+      created_at = posts_new$timestamp[i],
+      preview_card = FALSE
+    )
+  }
 }
