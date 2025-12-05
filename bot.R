@@ -37,14 +37,14 @@ rss_feeds  <- c (
 
   "https://www.watson.ch/fr/api/2.0/rss/index.xml?tag=Suisse",
 
-  "https://lecourrier.ch/rubrique/suisse/rss",
+  "https://lecourrier.ch/rubrique/suisse/rss"#,
   # "https://lecourrier.ch/theme/geneve/rss",
   # "https://lecourrier.ch/theme/neuchatel/rss",
   # "https://lecourrier.ch/theme/valais/rss",
   # "https://lecourrier.ch/theme/vaud/rss",
   # "https://lecourrier.ch/theme/jura/rss",
 
-  "https://www.protestinfo.ch/flux/protestinfo/rss.xml"
+ # "https://www.protestinfo.ch/flux/protestinfo/rss.xml"
 
 )
 
