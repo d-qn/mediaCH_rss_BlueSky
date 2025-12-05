@@ -58,7 +58,22 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
-      - uses: gautamkrishnar/keepalive-workflow@v2
-        with:
-          use_api: false
+      - name: Keepalive Workflow
+        run: |
+          # Calculate days since last commit
+          last_commit_date=$(git log -1 --format=%ct)
+          current_date=$(date +%s)
+          days_diff=$(( (current_date - last_commit_date) / 86400 ))
+          
+          echo "Days since last commit: $days_diff"
+          
+          if [ $days_diff -gt 50 ]; then
+            echo "Last commit was more than 50 days ago. Creating a keepalive commit."
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git commit --allow-empty -m "keepalive: automated commit to prevent workflow deactivation"
+            git push
+          else
+            echo "Last commit was recent enough. No action needed."
+          fi
             
