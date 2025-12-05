@@ -141,7 +141,7 @@ for (i in seq_len(max_retries)) {
   cat("Fetching skeets (attempt", i, "of", max_retries, ")...\n")
 
   # Use try() to catch errors without stopping execution
-  res <- try(get_skeets_authored_by("mediasch.bsky.social", limit = 500L), silent = TRUE)
+  res <- try(get_skeets_authored_by("mediasch.bsky.social", limit = 100L), silent = TRUE)
 
   if (!inherits(res, "try-error")) {
     old_posts <- res
