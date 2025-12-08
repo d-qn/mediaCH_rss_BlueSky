@@ -41,48 +41,56 @@ rss_feeds <- c(
 
 feedsl <- 1:length(rss_feeds) |>
   map(function(i) {
-    cat("Processing feed", rss_feeds[i], "\n")
+    tryCatch(
+      {
+        cat("Processing feed", rss_feeds[i], "\n")
 
-    ## Part 1: read RSS feed vers "Tous les articles"
-    feed <- read_xml(rss_feeds[i])
+        ## Part 1: read RSS feed vers "Tous les articles"
+        feed <- read_xml(rss_feeds[i])
 
-    descr <- xml_find_all(feed, "//item/description") |>
-      xml_text()
+        descr <- xml_find_all(feed, "//item/description") |>
+          xml_text()
 
-    if (str_detect(rss_feeds[i], "(partner\\-feeds|protestinfo|publiceye|blick)")) {
-      descr_txt <- descr |> str_replace_all("<[^>]+>", "")
-    } else {
-      # strip html from description
-      descr_txt <- descr |>
-        vapply(function(d) {
-          read_html(d) |>
+        if (str_detect(rss_feeds[i], "(partner\\-feeds|protestinfo|publiceye|blick)")) {
+          descr_txt <- descr |> str_replace_all("<[^>]+>", "")
+        } else {
+          # strip html from description
+          descr_txt <- descr |>
+            vapply(function(d) {
+              read_html(d) |>
+                xml_text() |>
+                trimws()
+            }, FUN.VALUE = character(1))
+        }
+        # minimal custom RSS reader
+        rss_posts <- tibble::tibble(
+          title = xml_find_all(feed, "//item/title") |>
+            xml_text(),
+
+          # creator = xml_find_all(feed, "//item/dc:creator") |>
+          #   xml_text(),
+
+          link = xml_find_all(feed, "//item/link") |>
+            xml_text(),
+
+          # ext_link = xml_find_all(feed, "//item/guid") |>
+          #   xml_text(),
+
+          timestamp = xml_find_all(feed, "//item/pubDate") |>
             xml_text() |>
-            trimws()
-        }, FUN.VALUE = character(1))
-    }
-    # minimal custom RSS reader
-    rss_posts <- tibble::tibble(
-      title = xml_find_all(feed, "//item/title") |>
-        xml_text(),
-
-      # creator = xml_find_all(feed, "//item/dc:creator") |>
-      #   xml_text(),
-
-      link = xml_find_all(feed, "//item/link") |>
-        xml_text(),
-
-      # ext_link = xml_find_all(feed, "//item/guid") |>
-      #   xml_text(),
-
-      timestamp = xml_find_all(feed, "//item/pubDate") |>
-        xml_text() |>
-        utctime(tz = "UTC"),
-      description = descr_txt
+            utctime(tz = "UTC"),
+          description = descr_txt
+        )
+        rss_posts %>%
+          mutate(
+            feed = rss_feeds[i]
+          )
+      },
+      error = function(e) {
+        cat("Error processing feed", rss_feeds[i], ":", conditionMessage(e), "\n")
+        return(NULL)
+      }
     )
-    rss_posts %>%
-      mutate(
-        feed = rss_feeds[i]
-      )
   })
 
 feeds_df <- bind_rows(feedsl)
